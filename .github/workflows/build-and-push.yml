@@ -1,0 +1,33 @@
+name: gateway-build-push
+
+on:
+  push:
+    branches: ["main"]
+  workflow_dispatch:
+
+jobs:
+  docker:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 코드 가져오기
+        uses: actions/checkout@v4
+
+      - name: AWS 자격증명 설정
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ap-northeast-2
+
+      - name: ECR 로그인
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Docker 이미지 빌드 및 푸시
+        env:
+          IMAGE_REPO: 436630934123.dkr.ecr.ap-northeast-2.amazonaws.com/ssd-api-gateway
+        run: |
+          docker build -t $IMAGE_REPO:${GITHUB_SHA} .
+          docker tag $IMAGE_REPO:${GITHUB_SHA} $IMAGE_REPO:latest
+          docker push $IMAGE_REPO:${GITHUB_SHA}
+          docker push $IMAGE_REPO:latest
